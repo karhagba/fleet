@@ -1,0 +1,181 @@
+from java.util import Calendar
+from java.util import Date
+from java.text import SimpleDateFormat
+from java.lang import StringBuilder
+from psdi.util.logging import MXLoggerFactory
+from java.text import SimpleDateFormat
+from psdi.server import MXServer
+currentDate = Calendar.getInstance().getTime()
+changeBy = user
+changeDate = currentDate
+toRedPouchEmailList = ""
+toVoygEmailList = ""
+toLicenseTitleEmailList = ""
+toDelayedWarrEmailList = ""
+toCordinatorEmailList = ""
+toAnalystEmailList = ""
+toCustodianEmailList=""
+def setError(msgKey, msgGrp, msgParam):
+    global errorkey, errorgroup, params
+    errorkey = msgKey
+    errorgroup = msgGrp
+    params = msgParam
+def buildAssetRecToEmailLists():
+    emailList = ""
+    toRedPouchEmailList = ""
+    toVoygEmailList = ""
+    toLicenseTitleEmailList = ""
+    toDelayedWarrEmailList = ""
+    toCordinatorEmailList = ""
+    toAnalystEmailList = ""
+    toCustodianEmailList = ""
+    if ( 1==1):
+
+        #defaultRepFac = mbo.getOwner().getString("DEFAULTREPFAC")
+        locationCustUserMboSet = mbo.getOwner().getMboSet("AEPLOCUSERCUST")
+        if (not locationCustUserMboSet.isEmpty()):
+            personAdded = 0
+            locationMbo = locationCustUserMboSet.moveFirst()
+            while (locationMbo):
+                personAdded = 0
+                if(locationMbo.getBoolean("AEPISANALYST") == 1 and personAdded == 0 ):
+                    emailList += locationMbo.getString("PERSONID") +  "@aep.com" + ","
+                    personAdded = 1
+                if(locationMbo.getBoolean("ISCUSTODIAN") == 1  and personAdded == 0 ):
+                    emailList += locationMbo.getString("PERSONID") +  "@aep.com" + ","
+                    personAdded = 1
+                if (locationMbo.getBoolean("AEPISREDPOUCHCONTACT") == 1  and mbo.getString("ISREDPOUCH") == "Y" and personAdded == 0 ):
+                    emailList += locationMbo.getString("PERSONID") + "@aep.com" + ","
+                    personAdded = 1
+                if(locationMbo.getBoolean("AEPISVOYGCONTACTAEPISVOYGCONTACT") == 1 and mbo.getString("ISVOYAGERCARD") == "Y" and personAdded == 0 ):
+                    emailList += locationMbo.getString("PERSONID") +  "@aep.com" + ","
+                    personAdded = 1
+                if(locationMbo.getBoolean("AEPISLICENSETITLECONTACT") == 1 and mbo.getString("ISLICENSEPLATE") == "Y" and personAdded == 0 ):
+                    emailList += locationMbo.getString("PERSONID") +  "@aep.com" + ","
+                    personAdded = 1
+                if(locationMbo.getBoolean("AEPISDELAYEDWARRANTY") == 1 and personAdded == 0 ):
+                    emailList += locationMbo.getString("PERSONID") +  "@aep.com" + ","
+                    personAdded = 1
+                locationMbo = locationCustUserMboSet.moveNext()
+            emailList = emailList[:-1]
+            return emailList
+def buildInServToEmailLists():
+    emailList = ""
+    woAssetMboSet = mbo.getOwner().getMboSet("ASSET")
+    if(not woAssetMboSet.isEmpty()):
+        assetlocMboSet = woAssetMboSet.getMbo(0).getMboSet("AEPLOCUSERCUST")
+        if (not assetlocMboSet.isEmpty()):
+            locationMbo = assetlocMboSet.moveFirst()
+            while (locationMbo):
+                if(locationMbo.getBoolean("AEPISCOORDINATOR") == 1 and mbo.getString("ISREPLASSETAUCREADY")):
+                    emailList += locationMbo.getString("PERSONID")  +  "@aep.com" + ","
+                locationMbo = assetlocMboSet.moveNext()
+            emailList = emailList[:-1]
+
+    return emailList
+def constrAssetRecMessage():
+
+    message = ""
+    message += "<font face='Times New Roman' size='10'><table border = '0'>"
+    message += " <tr><td colspan='2'> ASSET RECEIVING INFORMATION:  </td></tr>  "
+    message += " <tr><td> Asset Number: </td> " + "" + mbo.getString("ASSETNUM") + "</td></tr>"
+    message += " <tr><td>  Replaced Unit No:</td> " + ""  + mbo.getString("ASSETREPLACED") + "</td></tr>"
+    if(mbo.isNull("RECEIVEDATE")):
+        message += " <tr><td>  Receive Date: </td>" + "<td></td></tr>"
+    else:
+        message += " <tr><td> Receive Date:</td> " +  "<td>" + str(mbo.getDate("RECEIVEDATE")) + "</td></tr>"
+    message += " <tr><td> Body Serial Number: </td>" + "<td>" + mbo.getString("BODYSERIALNUM") + "</td></tr>"
+    message += " <tr><td>  VIN: </td>" + "<td>" + mbo.getString("VIN") + "</td></tr>"
+    message += " <tr><td>  Hydraulic Serial Number:</td> " + "<td>" +  mbo.getString("HYDRAULICSERIALNUM") + "</td></tr>"
+    message += " <tr><td>  License Weight:</td> " + "<td>" + mbo.getString("LICENSEWEIGHT") + "</td></tr>"
+    message += " <tr><td> Asset Color:</td> " + "<td>" + mbo.getString("ASSETCOLOR") + "</td></tr>"
+    message += " <tr><td>  # Of Axles: </td>" + "<td>" + mbo.getString("AXLES") + "</td></tr>"
+    message += " <tr><td>  Did You Open a Make Ready Work Order:</td> " + "<td>" + mbo.getString("ISMAKEREADYWO") + "</td></tr>"
+    message += " <tr><td>  Make Ready WO Number: </td>" + "<td>" + mbo.getString("MAKEREADYWONUM") + "</td></tr>"
+    message += " <tr><td>  Do You Need a Red Pouch:</td> " + "<td>" + mbo.getString("ISREDPOUCH") + "</td></tr>"
+    message += " <tr><td>  Do You Need a Voyager Card:</td> " + "<td>" + mbo.getString("ISVOYAGERCARD") + "</td></tr>"
+    message += " <tr><td>  Do You Need a License Plate:</td> " + "<td>" + mbo.getString("ISLICENSEPLATE") + "</td></tr>"
+    message += " <tr><td>  Do You Need a Temporary Tag:</td> " + "<td>" + mbo.getString("ISTEMPTAG") + "</td></tr>"
+    message += " <tr><td>  Did You attach a Picture of the Asset To Work Order:</td> " + "<td>" + mbo.getString("ISASSETPICATTACHED") + "</td></tr>"
+    message += " <tr><td> Did you attach VIN Tag Picture to Work Order: </td>" + "<td>" + mbo.getString("ISVINTAGPICATTACHTED") + "</td></tr>"
+    message += " <tr><td> Maintenance Location:</td> " + "<td>" + mbo.getString("MAINTLOC") + "</td></tr>"
+    message += " <tr><td>  Parking Location:</td> " + "<td>" + mbo.getString("PARKINGLOC") + "</td></tr>"
+    message += " <tr><td>  Asset Receiving Updated By: </td>" + "<td>" + mbo.getString("ASSETRECVINFOUPDTBY") + "</td></tr>"
+    if(mbo.isNull("ASSETRECVINFOUPDTDT")):
+        message += " <tr><td> Asset Receiving Updated Date:</td> " + "<td></td></tr>"
+    else:
+        message += " <tr><td>  Asset Receiving Updated Date:</td> " + "<td>" + str(mbo.getDate("ASSETRECVINFOUPDTDT")) + "</td></tr>"
+        message += "</table>"
+    return message
+def contrInservMessage():
+
+    message1 = ""
+    message1 += "<table border='0'>"
+    message1 += " <tr> <td colspan ='2'>  ASSET IN SERVICE INFORMATION:</td>   </tr>  "
+    if(mbo.isNull("INSERVICEDATE")):
+        message1 += "<tr><td>   In Service Date: </td> " + "<td></td></tr>"
+    else:
+        message1 += " <tr><td>  In Service Date: : </td>" + "<td>" + str(mbo.getDate("INSERVICEDATE")) + "</td></tr>"
+
+    message1 += " <tr><td>  Hitch Type: </td>" + "<td>" + mbo.getString("HITCHTYPE") + "</td></tr>"
+    message1 += " <tr><td>  ODOM Reading: </td>" + "<td>" + mbo.getString("ODOMREADING") + "</td></tr>"
+    message1 += " <tr><td>  Model: </td> " + "<td>" + mbo.getString("MODEL") + "</td></tr>"
+    if(mbo.isNull("NEWOPERATORNAME")):
+        message1 += "<tr><td> Operator Name:</td> " + "<td></td></tr>"
+    else:
+        message1 += " <tr><td>  Operator Name:</td> " + "<td>" + mbo.getString("NEWOPERATORNAME") + "</td></tr>"
+
+    message1 += " <tr><td>  Take Home Category:</td> " + "<td>" + mbo.getString("TAKEHOMECATEGORY") + "</td></tr>"
+    message1 += " <tr><td>  Do You Need IFTA Decal:</td> " + "<td>" + mbo.getString("ISIFTADECAL") + "</td></tr>"
+    message1 += " <tr><td>  Is Replace Unit Ready For Auction: </td>" + "<td>" + mbo.getString("ISREPLASSETAUCREADY") + "</td></tr>"
+    message1 += " <tr><td>  Hydraulic Category:</td> " + "<td>" + mbo.getString("HYDCATEGORY") + "</td></tr>"
+    message1 += " <tr><td>  KVA Rating:</td> " + "<td>" + mbo.getString("KVARATING") + "</td></tr>"
+    message1 += " <tr><td>  In Service Updated By:</td> " + "<td>" + mbo.getString("WORECVINFOUPDTBY") + "</td></tr>"
+    if(mbo.isNull("WORECVINFOUPDTDT")):
+        message1 += " <tr><td>  In Service Updated Date:</td> " + "<td></td></tr>"
+    else:
+        message1 += " <tr><td> In Service Updated Date:</td> " + "<td>" + str(mbo.getDate("WORECVINFOUPDTDT")) + "</td></tr>"
+    message1 += "</table>"
+    return message1
+if(interactive):
+    message = ""
+    toRecEmailList = ""
+    toInservEmailList = ""
+    appName = mbo.getThisMboSet().getParentApp()
+    if(launchPoint == "AEPASSETREC_VALD"):
+        mbo.setValue("LASTWOCOMMEMAILLIST","")
+        if(appName == "PLUSTASSET"):
+            toRecEmailList = buildAssetRecToEmailLists()
+            mbo.setValue("ASSETRECVINFOUPDTDT",currentDate)
+            mbo.setValue("ASSETRECVINFOUPDTBY",changeBy)
+            mbo.setValue("LASTCOMMEMAILLIST",toRecEmailList)
+        if(appName == "PLUSTQRP"):
+            toInservEmailList = buildInServToEmailLists()
+            mbo.setValue("WORECVINFOUPDTDT",currentDate)
+            mbo.setValue("WORECVINFOUPDTBY",changeBy)
+            mbo.setValue("LASTWOCOMMEMAILLIST",toInservEmailList)
+
+    if(launchPoint == "AEPASSETRECV_SAVE"):
+
+        if(appName == "PLUSTASSET"):
+            assetrecMesg = constrAssetRecMessage()
+            commTempSet = mbo.getMboSet("AEPASTRECNOTIFY")
+            commTemp = commTempSet.getMbo(0)
+            commTemp.setValue("MESSAGE", assetrecMesg)
+            commTemp.sendMessage()
+            commTempSet.close()
+
+        if(appName=="PLUSTQRP"):
+            inServMesg = contrInservMessage()
+            assetrecMesg = constrAssetRecMessage()
+            woMesg = inServMesg + assetrecMesg
+            commTempSetWO = mbo.getMboSet("AEPASTINSRVNOTIF")
+            commTempWO = commTempSetWO.getMbo(0)
+            commTempWO.setValue("MESSAGE", woMesg)
+            commTempWO.sendMessage()
+            commTempSetWO.close()
+    if(launchPoint == "AEPASSETRECV_INIT"):
+        assetnum=mbo.getOwner().getString("ASSETNUM")
+        mbo.setValue("ASSETNUM", assetnum)
+        mbo.setValue("ASSETRECVINFOUPDTDT",currentDate)
+        mbo.setValue("ASSETRECVINFOUPDTBY",changeBy)
